@@ -17,11 +17,7 @@ phases:
       - sonar-scanner -Dsonar.login=$LOGIN -Dsonar.host.url=$HOST -Dsonar.projectKey=$Project -Dsonar.organization=$Organization -Dsonar.scm.disabled=true
       - |
         status="PENDING";
-        while [ "${status}" != "SUCCESS" ]; do
-          if [ "${status}" = "FAILED" ] || [ $"{status}" = "CANCELLED" ]; then
-            echo Status is Failed/Cancelled
-            exit 1;
-          fi
+        while [ "${status}" != "OK" ]; do
           curl --silent https://sonarcloud.io/api/qualitygates/project_status?projectKey=$Project >result.json
           status=$(jq -r '.projectStatus.status' result.json)
           echo ${status}
