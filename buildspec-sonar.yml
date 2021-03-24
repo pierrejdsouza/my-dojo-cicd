@@ -24,6 +24,6 @@ phases:
           sleep 5;
         done
       - cat result.json
-      - if [ $(jq -r '.projectStatus.status' result.json) = ERROR ] || [ $(jq -r '.projectStatus.status' result.json) = WARN ] || [ $(jq -r '.projectStatus.status' result.json) = OK ]; then $CODEBUILD_BUILD_SUCCEEDING -eq 0 ;fi
+      - if [ $(jq -r '.projectStatus.status' result.json) = "ERROR" ] || [ $(jq -r '.projectStatus.status' result.json) = "WARN" ] || [ $(jq -r '.projectStatus.status' result.json) = "OK" ]; then $CODEBUILD_BUILD_SUCCEEDING -eq 0 ;fi
 artifacts:
     files: '**/*' 
