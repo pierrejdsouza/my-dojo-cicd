@@ -8,13 +8,13 @@ phases:
       java: corretto11
   pre_build:
     commands:
-      - yum install java-11-amazon-corretto
+      - java -version
       - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.3.0.1492-linux.zip
       - unzip ./sonar-scanner-cli-3.3.0.1492-linux.zip
-      - export PATH=$PATH:./sonar-scanner-3.3.0.1492-linux/bin/
+      # - export PATH=$PATH:./sonar-scanner-3.3.0.1492-linux/bin/
   build:
     commands:    
-      - sonar-scanner -Dsonar.login=$LOGIN -Dsonar.host.url=$HOST -Dsonar.projectKey=$Project -Dsonar.organization=$Organization
+      - ./sonar-scanner-3.3.0.1492-linux/bin/sonar-scanner -Dsonar.login=$LOGIN -Dsonar.host.url=$HOST -Dsonar.projectKey=$Project -Dsonar.organization=$Organization
       - sleep 5
       - curl https://sonarcloud.io/api/qualitygates/project_status?projectKey=$Project >result.json
       - cat result.json
