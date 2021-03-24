@@ -24,6 +24,6 @@ phases:
           sleep 5;
         done
       - status=$(jq -r '.projectStatus.status' result.json)
-      - if [ "${status}" = "ERROR" ] || [ "${status}" = "WARN" ] || [ "${status}" = "OK" ] ; then $CODEBUILD_BUILD_SUCCEEDING -eq 0 ;fi
+      - if [ "${status}" = "ERROR" ] || [ "${status}" = "WARN" ] || [ "${status}" = "OK" ] ; then echo "Alert! ${status}" && exit 1; else exit 0;fi
 artifacts:
     files: '**/*' 
