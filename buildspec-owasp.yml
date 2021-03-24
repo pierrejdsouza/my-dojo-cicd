@@ -23,7 +23,11 @@ phases:
       - info_alerts=$(curl "${ZapUrl}/JSON/alert/view/alertsSummary/?apikey=${ZapApiKey}&baseurl=${AppUrl}" | jq -r '.alertsSummary.Informational')
   build:
     commands:
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - curl "${ZapUrl}/OTHER/core/other/jsonreport/?apikey=${ZapApiKey}" | jq . > zap-scan-results.json
+      - curl "${ZapUrl}/OTHER/core/other/htmlreport/?apikey=${ZapApiKey}" > ${COMMIT_HASH}.html
+      - echo "uploading html report to s3"
+      - aws s3 cp ${COMMIT_HASH}.html s3://my-dojo-cicd/
       - echo "build stage completed"
   post_build:
     commands:
