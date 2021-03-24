@@ -16,16 +16,16 @@ phases:
     commands:    
       - sonar-scanner -Dsonar.login=$LOGIN -Dsonar.host.url=$HOST -Dsonar.projectKey=$Project -Dsonar.organization=$Organization
       - |
-        stat="PENDING";
-        while [ "$stat" != "SUCCESS" ]; do
-          if [ $stat = "FAILED" ] || [ $stat = "CANCELLED" ]; then
-            echo "SonarQube task $sonar_task_id failed";
+        status="PENDING";
+        while [ "${status}" != "SUCCESS" ]; do
+          if [ "${status}" = "FAILED" ] || [ $"{status}" = "CANCELLED" ]; then
+            echo Status is Failed/Cancelled
             exit 1;
           fi
-          stat=$(curl https://sonarcloud.io/api/qualitygates/project_status?projectKey=$Project >result.json)
+          status=$(curl https://sonarcloud.io/api/qualitygates/project_status?projectKey=$Project >result.json)
           sleep 5;
         done
       - cat result.json
-      - if [ $(jq -r '.projectStatus.status' result.json) = ERROR ] || [ $(jq -r '.projectStatus.status' result.json) = WARN) ]; then $CODEBUILD_BUILD_SUCCEEDING -eq 0 ;fi
+      - if [ $(jq -r '.projectStatus.status' result.json) = ERROR ] || [ $(jq -r '.projectStatus.status' result.json) = WARN ]; then $CODEBUILD_BUILD_SUCCEEDING -eq 0 ;fi
 artifacts:
     files: '**/*' 
