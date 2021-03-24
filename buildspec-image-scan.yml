@@ -1,0 +1,39 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Lets do this
+  pre_build:
+    commands:
+      - echo Starting image scan 
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - aws ecr start-image-scan --repository-name my-dojo-cicd-ecs --image-id imageTag=${COMMIT_HASH} --region ap-southeast-1
+      - |
+        status="STARTED"
+        while [ "${status}" != "COMPLETE" ]; do
+          status=$(aws ecr describe-image-scan-findings --repository-name my-dojo-cicd-ecs --image-id imageTag=${COMMIT_HASH} --region ap-southeast-1 | jq -r '.imageScanStatus.status')
+          echo Status is: ${status}
+          sleep 1
+        done
+  build:
+    commands:
+      - echo Calc alerts
+      - critical_alerts=$(aws ecr describe-image-scan-findings --repository-name my-dojo-cicd-ecs --image-id imageTag=${COMMIT_HASH} | jq -r '.imageScanFindings.findingSeverityCounts.CRITICAL')
+      - high_alerts=$(aws ecr describe-image-scan-findings --repository-name my-dojo-cicd-ecs --image-id imageTag=${COMMIT_HASH} | jq -r '.imageScanFindings.findingSeverityCounts.HIGH')
+      - medium_alerts=$(aws ecr describe-image-scan-findings --repository-name my-dojo-cicd-ecs --image-id imageTag=${COMMIT_HASH} | jq -r '.imageScanFindings.findingSeverityCounts.MEDIUM')
+      - low_alerts=$(aws ecr describe-image-scan-findings --repository-name my-dojo-cicd-ecs --image-id imageTag=${COMMIT_HASH} | jq -r '.imageScanFindings.findingSeverityCounts.LOW')
+      - if [ $critical_alerts == "null" ]; then critical_alerts=0; fi
+      - if [ $high_alerts == "null" ]; then high_alerts=0; fi
+      - if [ $medium_alerts == "null" ]; then medium_alerts=0; fi
+      - if [ $low_alerts == "null" ]; then low_alerts=0; fi
+      - echo $critical_alerts
+      - echo $high_alerts
+      - echo $medium_alerts
+      - echo $low_alerts
+  post_build:
+    commands:
+      - echo Have alerts?
+      - if [ $critical_alerts -gt 0 ] || [ $high_alerts -gt 0 ] || [ $medium_alerts -gt 0 ]; then echo "alerts man, failing build" && exit 1; else exit 0; fi
+artifacts:
+    files: '**/*'
