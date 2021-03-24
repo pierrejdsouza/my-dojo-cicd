@@ -14,7 +14,7 @@ phases:
       - export PATH=$PATH:./sonar-scanner-4.6.0.2311-linux/bin/
   build:
     commands:    
-      - sonar-scanner -Dsonar.login=$LOGIN -Dsonar.host.url=$HOST -Dsonar.projectKey=$Project -Dsonar.organization=$Organization
+      - sonar-scanner -Dsonar.login=$LOGIN -Dsonar.host.url=$HOST -Dsonar.projectKey=$Project -Dsonar.organization=$Organization -Dsonar.scm.disabled=true
       - |
         status="PENDING";
         while [ "${status}" != "SUCCESS" ]; do
@@ -22,7 +22,9 @@ phases:
             echo Status is Failed/Cancelled
             exit 1;
           fi
-          status=$(curl https://sonarcloud.io/api/qualitygates/project_status?projectKey=$Project >result.json)
+          curl --silent https://sonarcloud.io/api/qualitygates/project_status?projectKey=$Project >result.json
+          status=$(jq -r '.projectStatus.status' result.json)
+          echo ${status}
           sleep 5;
         done
       - cat result.json
