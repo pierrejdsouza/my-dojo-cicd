@@ -11,13 +11,21 @@ phases:
       - java -version
       - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.6.0.2311-linux.zip
       - unzip ./sonar-scanner-cli-4.6.0.2311-linux.zip
-      # - export PATH=$PATH:./sonar-scanner-3.3.0.1492-linux/bin/
+      - export PATH=$PATH:./sonar-scanner-3.3.0.1492-linux/bin/
   build:
     commands:    
-      - ./sonar-scanner-4.6.0.2311-linux/bin/sonar-scanner -Dsonar.login=$LOGIN -Dsonar.host.url=$HOST -Dsonar.projectKey=$Project -Dsonar.organization=$Organization
-      - sleep 5
-      - curl https://sonarcloud.io/api/qualitygates/project_status?projectKey=$Project >result.json
+      - sonar-scanner -Dsonar.login=$LOGIN -Dsonar.host.url=$HOST -Dsonar.projectKey=$Project -Dsonar.organization=$Organization
+      - |
+        stat="PENDING";
+        while [ "$stat" != "SUCCESS" ]; do
+          if [ $stat = "FAILED" ] || [ $stat = "CANCELLED" ]; then
+            echo "SonarQube task $sonar_task_id failed";
+            exit 1;
+          fi
+          stat=$(curl https://sonarcloud.io/api/qualitygates/project_status?projectKey=$Project >result.json)
+          sleep 5;
+        done
       - cat result.json
-      - if [ $(jq -r '.projectStatus.status' result.json) = ERROR ] ; then $CODEBUILD_BUILD_SUCCEEDING -eq 0 ;fi
+      - if [ $(jq -r '.projectStatus.status' result.json) = ERROR ] || [ $(jq -r '.projectStatus.status' result.json) = WARN) ]; then $CODEBUILD_BUILD_SUCCEEDING -eq 0 ;fi
 artifacts:
     files: '**/*' 
